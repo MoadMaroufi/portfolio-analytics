@@ -3,6 +3,9 @@
 import { useState } from "react";
 import MetricCard from "@/components/MetricCard";
 import TickerInput from "@/components/TickerInput";
+import AuthButton from "@/components/AuthButton";
+import PortfolioManager from "@/components/PortfolioManager";
+import { useAuth } from "@/lib/useAuth";
 
 // Shape of what the API returns
 type Result = {
@@ -20,6 +23,8 @@ type Row = { ticker: string; weight: string };
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export default function Home() {
+  const { user, loading: authLoading } = useAuth();
+
   const [rows, setRows] = useState<Row[]>([
     { ticker: "AAPL", weight: "50" },
     { ticker: "MSFT", weight: "50" },
@@ -82,6 +87,7 @@ export default function Home() {
           <p className="text-gray-400">Enter your holdings and get key risk metrics instantly.</p>
         </div>
         <div className="flex flex-col items-end gap-1 text-sm text-gray-400">
+          {!authLoading && <AuthButton user={user} />}
           <span className="font-medium text-white">Moaad MAAROUFI</span>
           <div className="flex gap-3 mt-1">
             <a href="https://www.linkedin.com/in/moaad-maaroufi-903964242/?locale=en" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" aria-label="LinkedIn">
@@ -138,6 +144,11 @@ export default function Home() {
           </button>
         </div>
       </form>
+
+      {/* Save/load portfolios — only visible when signed in */}
+      {user && (
+        <PortfolioManager user={user} currentRows={rows} onLoad={setRows} />
+      )}
 
       {error && <p className="mt-6 text-red-400">{error}</p>}
 
