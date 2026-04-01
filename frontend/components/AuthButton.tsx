@@ -3,10 +3,15 @@
 import { getFirebaseAuth } from "@/lib/firebase";
 import { signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
 import { User } from "firebase/auth";
+import { useLang } from "@/lib/lang";
+import { t } from "@/lib/copy";
 
 type Props = { user: User | null };
 
 export default function AuthButton({ user }: Props) {
+  const { lang } = useLang();
+  const c = t(lang);
+
   const handleGoogleSignIn = () =>
     signInWithPopup(getFirebaseAuth(), new GoogleAuthProvider());
 
@@ -18,7 +23,7 @@ export default function AuthButton({ user }: Props) {
           onClick={() => signOut(getFirebaseAuth())}
           className="text-gray-500 hover:text-white transition-colors"
         >
-          Sign out
+          {c.signOut}
         </button>
       </div>
     );
@@ -29,7 +34,7 @@ export default function AuthButton({ user }: Props) {
       onClick={handleGoogleSignIn}
       className="text-sm bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded transition-colors"
     >
-      Sign in with Google
+      {c.signIn}
     </button>
   );
 }

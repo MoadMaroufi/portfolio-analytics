@@ -8,6 +8,8 @@ import {
   deletePortfolio,
   SavedPortfolio,
 } from "@/lib/portfolios";
+import { useLang } from "@/lib/lang";
+import { t } from "@/lib/copy";
 
 type Row = { ticker: string; weight: string };
 type Props = {
@@ -17,6 +19,9 @@ type Props = {
 };
 
 export default function PortfolioManager({ user, currentRows, onLoad }: Props) {
+  const { lang } = useLang();
+  const c = t(lang);
+
   const [portfolios, setPortfolios] = useState<SavedPortfolio[]>([]);
   const [saveName, setSaveName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -46,13 +51,12 @@ export default function PortfolioManager({ user, currentRows, onLoad }: Props) {
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 space-y-3 mt-6">
-      <h3 className="font-semibold text-sm">My Portfolios</h3>
+      <h3 className="font-semibold text-sm">{c.myPortfolios}</h3>
 
-      {/* Save current portfolio */}
       <div className="flex gap-2">
         <input
           className="bg-gray-700 rounded px-3 py-1.5 text-sm flex-1"
-          placeholder="Portfolio name..."
+          placeholder={c.portfolioNamePlaceholder}
           value={saveName}
           onChange={(e) => setSaveName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSave()}
@@ -62,13 +66,12 @@ export default function PortfolioManager({ user, currentRows, onLoad }: Props) {
           disabled={saving || !saveName.trim()}
           className="bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded text-sm disabled:opacity-50 transition-colors"
         >
-          {saving ? "Saving..." : "Save"}
+          {saving ? c.saving : c.save}
         </button>
       </div>
 
-      {/* Saved portfolios list */}
       {portfolios.length === 0 ? (
-        <p className="text-gray-500 text-xs">No saved portfolios yet.</p>
+        <p className="text-gray-500 text-xs">{c.noPortfolios}</p>
       ) : (
         <ul className="space-y-1">
           {portfolios.map((p) => (
@@ -83,7 +86,7 @@ export default function PortfolioManager({ user, currentRows, onLoad }: Props) {
                 onClick={() => handleDelete(p.id)}
                 className="text-gray-600 hover:text-red-400 text-xs transition-colors"
               >
-                Delete
+                {c.delete}
               </button>
             </li>
           ))}
