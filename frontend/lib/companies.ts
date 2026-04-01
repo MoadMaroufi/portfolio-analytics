@@ -38,10 +38,31 @@ export const FRENCH_COMPANIES = [
   { ticker: "WLN.PA",  name: "Worldline" },
 ];
 
+// MASI blue chips — Casablanca Stock Exchange (.CS suffix on Yahoo Finance)
+export const MOROCCAN_COMPANIES = [
+  { ticker: "ATW.CS",   name: "Attijariwafa Bank" },
+  { ticker: "IAM.CS",   name: "Maroc Telecom" },
+  { ticker: "BCP.CS",   name: "Banque Centrale Populaire" },
+  { ticker: "BOA.CS",   name: "Bank of Africa" },
+  { ticker: "CIH.CS",   name: "CIH Bank" },
+  { ticker: "HPS.CS",   name: "HPS" },
+  { ticker: "LBV.CS",   name: "Label Vie" },
+  { ticker: "MNG.CS",   name: "Managem" },
+  { ticker: "WAA.CS",   name: "Wafa Assurance" },
+  { ticker: "TQM.CS",   name: "TotalEnergies Maroc" },
+  { ticker: "ADH.CS",   name: "Addoha" },
+  { ticker: "ALM.CS",   name: "Aluminium du Maroc" },
+  { ticker: "CNIA.CS",  name: "CNIA Saada Assurance" },
+  { ticker: "DLM.CS",   name: "Delattre Levivier Maroc" },
+  { ticker: "MSA.CS",   name: "Marsa Maroc" },
+];
+
+const ALL_COMPANIES = [...FRENCH_COMPANIES, ...MOROCCAN_COMPANIES];
+
 // Filter by ticker or company name
 export function searchCompanies(query: string) {
   const q = query.toLowerCase();
-  return FRENCH_COMPANIES.filter(
+  return ALL_COMPANIES.filter(
     (c) => c.ticker.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)
   ).slice(0, 6); // cap at 6 suggestions
 }
