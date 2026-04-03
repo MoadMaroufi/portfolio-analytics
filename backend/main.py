@@ -1,9 +1,14 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import Depends
 from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from config import Settings, get_settings
 from exceptions import (
@@ -123,7 +128,8 @@ def semantic_search(
         recommendations, explanation = generate_semantic_recommendations(
             query, results, settings
         )
-    except Exception:
+    except Exception as e:
+        logger.error(f"NVIDIA LLM error: {e}", exc_info=True)
         recommendations, explanation = build_fallback_recommendations(results)
 
     return SemanticSearchResponse(

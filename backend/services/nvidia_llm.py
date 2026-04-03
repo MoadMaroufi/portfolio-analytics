@@ -1,8 +1,11 @@
 import json
+import logging
 
 from openai import OpenAI
 
 from config import Settings
+
+logger = logging.getLogger(__name__)
 
 
 FALLBACK_LIMIT = 5
@@ -124,33 +127,72 @@ def build_fallback_recommendations(companies: list[dict]) -> tuple[list[dict], s
 def generate_semantic_recommendations(
     query: str, companies: list[dict], settings: Settings
 ) -> tuple[list[dict], str]:
+    logger.info(f"Starting semantic recommendations for query: {query[:50]}...")
+
     if not companies:
+        logger.warning("No companies provided to generate_semantic_recommendations")
         return [], "No relevant companies were found for this query."
 
-    prompt = build_semantic_prompt(query, companies)
-    client = _build_client(settings)
-    completion = client.chat.completions.create(
-        model=settings.nvidia_model,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=settings.llm_temperature,
-        top_p=settings.llm_top_p,
-        max_tokens=settings.llm_max_tokens,
-        stream=False,
-    )
+    try:
+        prompt = build_semantic_prompt(query, companies)
+        logger.info(f"Built prompt with {len(companies)} companies")
+    except Exception as e:
+        logger.error(f"Failed to build prompt: {e}", exc_info=True)
+        raise
 
-    content = completion.choices[0].message.content if completion.choices else None
+    try:
+        client = _build_client(settings)
+        logger.info(f"Created OpenAI client with base_url: {settings.nvidia_base_url}")
+    except Exception as e:
+        logger.error(f"Failed to build OpenAI client: {e}", exc_info=True)
+        raise
+
+    try:
+        logger.info(f"Calling NVIDIA API with model: {settings.nvidia_model}")
+        completion = client.chat.completions.create(
+            model=settings.nvidia_model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=settings.llm_temperature,
+            top_p=settings.llm_top_p,
+            max_tokens=settings.llm_max_tokens,
+            stream=False,
+        )
+        logger.info(f"NVIDIA API response received: {completion}")
+    except Exception as e:
+        logger.error(f"NVIDIA API call failed: {e}", exc_info=True)
+        raise
+
+    try:
+        content = completion.choices[0].message.content if completion.choices else None
+        logger.info(f"Extracted content length: {len(content) if content else 0}")
+    except Exception as e:
+        logger.error(f"Failed to extract content from completion: {e}", exc_info=True)
+        raise
+
     if not content:
         raise ValueError("NVIDIA API returned an empty response.")
 
-    payload = json.loads(content)
+    try:
+        payload = json.loads(content)
+        logger.info(f"Parsed JSON payload with keys: {list(payload.keys())}")
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse JSON response: {e}")
+        logger.error(f"Raw content: {content[:500]}")
+        raise ValueError(f"Invalid JSON in LLM response: {e}")
+
     explanation = payload.get("explanation")
     if not isinstance(explanation, str) or not explanation.strip():
+        logger.error(f"Missing or invalid explanation: {explanation}")
         raise ValueError("LLM response explanation is missing.")
 
     recommendations = payload.get("recommendations")
     if not isinstance(recommendations, list):
+        logger.error(f"Missing or invalid recommendations: {recommendations}")
         raise ValueError("LLM response recommendations are missing.")
+
+    logger.info(f"Processing {len(recommendations)} recommendations")
 
     companies_by_ticker = {company["ticker"]: company for company in companies}
     enriched = _enrich_recommendations(recommendations, companies_by_ticker)
+    logger.info(f"Successfully enriched {len(enriched)} recommendations")
     return enriched, explanation.strip()
