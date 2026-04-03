@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from pydantic import Field
 
 
 class AnalyzeRequest(BaseModel):
@@ -30,3 +31,29 @@ class OptimizeResponse(BaseModel):
     expected_volatility: float
     sharpe_ratio: float
     frontier: list[FrontierPoint]
+
+
+class SemanticSearchRequest(BaseModel):
+    query: str = Field(min_length=1)
+    top_k: int | None = Field(default=None, ge=1)
+
+
+class Recommendation(BaseModel):
+    ticker: str
+    name: str
+    weight: float
+    rationale: str
+    description: str
+    sector: str
+    industry: str
+    country: str
+    exchange: str
+    score: float
+
+
+class SemanticSearchResponse(BaseModel):
+    query: str
+    top_k: int
+    retrieved_count: int
+    recommendations: list[Recommendation]
+    explanation: str

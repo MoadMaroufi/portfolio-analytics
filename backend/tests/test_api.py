@@ -6,6 +6,7 @@ client = TestClient(app)
 
 # --- /analyze ---
 
+
 def test_single_ticker_rejected():
     """Only 1 ticker should return 400."""
     res = client.post("/analyze", json={"weights": {"AAPL": 1.0}})
@@ -14,7 +15,9 @@ def test_single_ticker_rejected():
 
 def test_fake_ticker_rejected():
     """A ticker that doesn't exist on Yahoo should return 404."""
-    res = client.post("/analyze", json={"weights": {"FAKETICKER123": 0.5, "ANOTHERFAKE": 0.5}})
+    res = client.post(
+        "/analyze", json={"weights": {"FAKETICKER123": 0.5, "ANOTHERFAKE": 0.5}}
+    )
     assert res.status_code == 404
 
 
@@ -33,6 +36,7 @@ def test_empty_weights_rejected():
 
 # --- /optimize validation (no network) ---
 
+
 def test_optimize_single_ticker_rejected():
     res = client.post("/optimize", json={"tickers": ["AAPL"]})
     assert res.status_code == 400
@@ -50,12 +54,17 @@ def test_optimize_fake_tickers_rejected():
 
 # --- /optimize response shape (mocked prices) ---
 
+
 def test_optimize_response_shape(mock_prices):
     res = client.post("/optimize", json={"tickers": ["AAPL", "MSFT", "GOOG"]})
     assert res.status_code == 200
     data = res.json()
     assert set(data.keys()) == {
-        "optimal_weights", "expected_return", "expected_volatility", "sharpe_ratio", "frontier"
+        "optimal_weights",
+        "expected_return",
+        "expected_volatility",
+        "sharpe_ratio",
+        "frontier",
     }
 
 
@@ -84,3 +93,65 @@ def test_optimize_frontier_point_shape(mock_prices):
     assert res.status_code == 200
     point = res.json()["frontier"][0]
     assert set(point.keys()) == {"volatility", "expected_return", "sharpe"}
+
+
+# --- /semantic-search ---
+
+
+def test_semantic_search_blank_query_rejected():
+    res = client.post("/semantic-search", json={"query": "   "})
+    assert res.status_code == 400
+
+
+def test_semantic_search_top_k_too_large_rejected(test_settings):
+    res = client.post("/semantic-search", json={"query": "green energy", "top_k": 99})
+    assert res.status_code == 400
+
+
+def test_semantic_search_response_shape(mock_semantic_services):
+    res = client.post("/semantic-search", json={"query": "European luxury", "top_k": 2})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["query"] == "European luxury"
+    assert data["top_k"] == 2
+    assert data["retrieved_count"] == 2
+    assert (
+        data["explanation"]
+        == "This portfolio emphasizes leading European luxury brands."
+    )
+    assert len(data["recommendations"]) == 2
+    assert set(data["recommendations"][0].keys()) == {
+        "ticker",
+        "name",
+        "weight",
+        "rationale",
+        "description",
+        "sector",
+        "industry",
+        "country",
+        "exchange",
+        "score",
+    }
+
+
+def test_semantic_search_empty_results(mock_semantic_services_empty):
+    res = client.post("/semantic-search", json={"query": "obscure theme"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["retrieved_count"] == 0
+    assert data["recommendations"] == []
+    assert data["explanation"] == "No relevant companies were found for this query."
+
+
+def test_semantic_search_falls_back_to_qdrant_results(mock_semantic_services_fallback):
+    res = client.post("/semantic-search", json={"query": "European luxury", "top_k": 2})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["retrieved_count"] == 2
+    assert len(data["recommendations"]) == 2
+    assert data["explanation"] == (
+        "Returned the top semantically matched companies with equal weights because "
+        "the NVIDIA portfolio synthesis step was unavailable."
+    )
+    assert data["recommendations"][0]["weight"] == 0.5
+    assert data["recommendations"][1]["weight"] == 0.5
