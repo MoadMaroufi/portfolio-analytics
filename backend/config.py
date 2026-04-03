@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.6
     llm_top_p: float = 0.9
     llm_max_tokens: int = 4096
+    huggingface_token: str | None = None
 
     # CORS configuration
     cors_origins: str = (

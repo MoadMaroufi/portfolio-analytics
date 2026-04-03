@@ -14,6 +14,53 @@ import {
 } from "@/lib/semanticSearch";
 import { savePortfolio } from "@/lib/portfolios";
 
+// Typing cursor animation component
+function ThinkingAnimation({
+  messages,
+  isLoading,
+}: {
+  messages: string[];
+  isLoading: boolean;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showCursor, setShowCursor] = useState(true);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setCurrentIndex(0);
+      return;
+    }
+
+    // Rotate through messages every 3 seconds
+    const messageInterval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % messages.length);
+    }, 3000);
+
+    // Blink cursor every 500ms
+    const cursorInterval = setInterval(() => {
+      setShowCursor((prev) => !prev);
+    }, 500);
+
+    return () => {
+      clearInterval(messageInterval);
+      clearInterval(cursorInterval);
+    };
+  }, [isLoading, messages.length]);
+
+  if (!isLoading) return null;
+
+  return (
+    <span className="inline-flex items-center">
+      <span className="text-blue-300">{messages[currentIndex]}</span>
+      <span
+        className={`ml-0.5 inline-block h-4 w-0.5 bg-blue-300 transition-opacity ${
+          showCursor ? "opacity-100" : "opacity-0"
+        }`}
+      />
+    </span>
+  );
+}
+
 type Props = {
   user: User | null;
   authLoading: boolean;
@@ -155,13 +202,24 @@ export default function DiscoverPage({ user, authLoading, initialQuery = "" }: P
                   className="min-h-32 w-full rounded-2xl border border-gray-800 bg-gray-950/80 px-5 py-4 text-base outline-none transition-colors placeholder:text-gray-500 focus:border-blue-500"
                 />
                 <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    type="submit"
-                    disabled={!canSubmit}
-                    className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-medium transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {loading ? c.discoverLoading : c.discoverSearch}
-                  </button>
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-medium transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? (
+                  <ThinkingAnimation
+                    messages={[
+                      c.discoverThinkingStep1,
+                      c.discoverThinkingStep2,
+                      c.discoverThinkingStep3,
+                    ]}
+                    isLoading={loading}
+                  />
+                ) : (
+                  c.discoverSearch
+                )}
+              </button>
                   <span className="text-sm text-gray-500">{c.discoverHint}</span>
                 </div>
               </form>
