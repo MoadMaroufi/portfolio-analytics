@@ -107,6 +107,13 @@ const COPY = {
     discoverCountry: "Country",
     discoverExchange: "Exchange",
     discoverSimilarity: "Similarity score",
+    // Quick/Smart search buttons
+    discoverQuickSearch: "Quick Search",
+    discoverSmartSearch: "Smart Search",
+    discoverQuickSearchHint: "Fast results using semantic ranking only",
+    discoverSmartSearchHint: "AI-powered portfolio construction with detailed reasoning",
+    discoverQuickSearchLoading: "Searching...",
+    discoverSmartSearchLoading: "AI is thinking...",
   },
   fr: {
     // Header
@@ -214,6 +221,13 @@ const COPY = {
     discoverCountry: "Pays",
     discoverExchange: "Bourse",
     discoverSimilarity: "Score de similarité",
+    // Boutons recherche rapide/intelligente
+    discoverQuickSearch: "Recherche rapide",
+    discoverSmartSearch: "Recherche intelligente",
+    discoverQuickSearchHint: "Résultats rapides basés sur le classement sémantique",
+    discoverSmartSearchHint: "Construction de portefeuille par IA avec raisonnement détaillé",
+    discoverQuickSearchLoading: "Recherche...",
+    discoverSmartSearchLoading: "L'IA réfléchit...",
   },
 } as const;
 

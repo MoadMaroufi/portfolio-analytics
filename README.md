@@ -19,16 +19,24 @@ Available in English and French.
 - Long-only constraint with per-asset weight cap
 - Results cached per user in Firestore (24h TTL) — no redundant API calls
 
+**AI-Powered Discovery (RAG)**
+- Semantic search over 570+ European companies (STOXX Europe 600)
+- Natural language queries: "European luxury stocks with pricing power"
+- AI-generated portfolio recommendations with weighted allocations
+- Integration with portfolio optimizer for seamless workflow
+
 **Authentication & Persistence**
 - Google Sign-In via Firebase Auth
 - Save, load, and delete named portfolios per user (Firestore)
+- Persist optimization results with caching
 
 ## Stack
 
 | Layer | Technology |
 |---|---|
-| Backend | FastAPI, yfinance, numpy/pandas, scipy, scikit-learn |
+| Backend | FastAPI, Poetry, yfinance, numpy/pandas, scipy, scikit-learn, sentence-transformers, Qdrant |
 | Frontend | Next.js 15 (App Router), Tailwind CSS, Recharts |
+| AI/ML | NVIDIA AI Foundation Models, Qdrant vector database, BGE embeddings |
 | Auth & DB | Firebase Auth, Firestore |
 | CI | GitHub Actions — runs full test suite on every push to `main` |
 | Hosting | Frontend → Vercel, Backend → Railway |
@@ -38,19 +46,28 @@ Available in English and French.
 **Backend**
 ```bash
 cd backend
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --reload   # http://localhost:8000
+poetry install
+poetry run uvicorn main:app --reload # http://localhost:8000
 ```
 
 **Frontend**
 ```bash
 cd frontend
 npm install
-npm run dev                 # http://localhost:3000
+npm run dev # http://localhost:3000
 ```
 
 The frontend reads `NEXT_PUBLIC_API_URL` for the backend address, defaulting to `http://localhost:8000`.
+
+**Backend environment** — create `backend/.env`:
+```
+PORTFOLIO_QDRANT_URL=https://your-qdrant-instance.cloud.qdrant.io
+PORTFOLIO_QDRANT_API_KEY=your-api-key
+PORTFOLIO_QDRANT_COLLECTION=european_companies
+PORTFOLIO_NVIDIA_API_KEY=nvapi-xxxxx
+PORTFOLIO_HUGGINGFACE_TOKEN=hf_xxxxx
+PORTFOLIO_CORS_ORIGINS=http://localhost:3000
+```
 
 **Frontend environment** — create `frontend/.env.local`:
 ```
@@ -67,7 +84,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=
 
 ```bash
 cd backend
-pytest tests/ -v
+poetry run pytest tests/ -v
 ```
 
 12 tests covering input validation, ticker resolution, and optimizer response shape.
@@ -75,14 +92,5 @@ pytest tests/ -v
 ## Deploy
 
 - **Frontend** → Vercel: set `NEXT_PUBLIC_API_URL` and all `NEXT_PUBLIC_FIREBASE_*` variables in project settings.
-- **Backend** → Railway: `backend/Dockerfile` is production-ready. No additional config required.
+- **Backend** → Railway: `backend/Dockerfile` is production-ready. Uses Poetry for dependency management.
 - **Firestore rules** — ensure your security rules cover `users/{uid}/{document=**}` to allow subcollection writes.
-
-## Roadmap
-
-- **Multi-period backtesting** — compare optimized allocation vs equal-weight and buy-and-hold benchmarks over custom date ranges
-- **Sector exposure breakdown** — show concentration by sector (tech, financials, energy, etc.) alongside ticker-level weights
-- **Rebalancing alerts** — notify users when their current portfolio drifts significantly from the optimal allocation
-- **PDF report export** — one-click downloadable summary with metrics, frontier chart, and suggested allocation
-- **Expanded market coverage** — better support for markets with limited yfinance coverage (Casablanca SE, Gulf exchanges) via alternative data providers
-- **Rolling optimization** — show how optimal weights evolve over time as the covariance structure changes

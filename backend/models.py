@@ -36,6 +36,7 @@ class OptimizeResponse(BaseModel):
 class SemanticSearchRequest(BaseModel):
     query: str = Field(min_length=1)
     top_k: int | None = Field(default=None, ge=1)
+    use_llm: bool = Field(default=True)
 
 
 class Recommendation(BaseModel):

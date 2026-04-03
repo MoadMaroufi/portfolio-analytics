@@ -37,6 +37,7 @@ from services.embeddings import embed_query, load_embedding_model, reset_embeddi
 from services.market_data import fetch_closing_prices
 from services.nvidia_llm import (
     build_fallback_recommendations,
+    build_ranking_recommendations,
     generate_semantic_recommendations,
 )
 from services.optimizer import optimize_portfolio
@@ -124,13 +125,17 @@ def semantic_search(
             status_code=502, detail=f"Semantic retrieval failed: {exc}"
         ) from exc
 
-    try:
-        recommendations, explanation = generate_semantic_recommendations(
-            query, results, settings
-        )
-    except Exception as e:
-        logger.error(f"NVIDIA LLM error: {e}", exc_info=True)
-        recommendations, explanation = build_fallback_recommendations(results)
+    if req.use_llm:
+        try:
+            recommendations, explanation = generate_semantic_recommendations(
+                query, results, settings
+            )
+        except Exception as e:
+            logger.error(f"NVIDIA LLM error: {e}", exc_info=True)
+            recommendations, explanation = build_fallback_recommendations(results)
+    else:
+        # Use ranking-only mode for quick results
+        recommendations, explanation = build_ranking_recommendations(results)
 
     return SemanticSearchResponse(
         query=query,

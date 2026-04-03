@@ -23,12 +23,13 @@ export type SemanticSearchResponse = {
 
 export async function runSemanticSearch(
   query: string,
-  topK = 5
+  topK = 5,
+  useLlm = true
 ): Promise<SemanticSearchResponse> {
   const res = await fetch(`${API_URL}/semantic-search`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, top_k: topK }),
+    body: JSON.stringify({ query, top_k: topK, use_llm: useLlm }),
   });
 
   if (!res.ok) {

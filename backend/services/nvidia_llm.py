@@ -101,6 +101,46 @@ def _enrich_recommendations(
     return _normalize_weights(enriched)
 
 
+def build_ranking_recommendations(companies: list[dict]) -> tuple[list[dict], str]:
+    """Build recommendations using only semantic ranking (no LLM).
+
+    Uses the top 5 companies ranked by similarity score with weights
+    proportional to their relative scores.
+    """
+    ranking_companies = companies[:FALLBACK_LIMIT]
+    if not ranking_companies:
+        return [], "No relevant companies were found for this query."
+
+    # Calculate weights proportional to similarity scores
+    total_score = sum(company["score"] for company in ranking_companies)
+    if total_score <= 0:
+        # Fallback to equal weights if scores are invalid
+        equal_weight = 1.0 / len(ranking_companies)
+        recommendations = [
+            {
+                **company,
+                "weight": equal_weight,
+                "rationale": f"Selected based on semantic similarity (score: {company['score']:.4f}).",
+            }
+            for company in ranking_companies
+        ]
+    else:
+        recommendations = [
+            {
+                **company,
+                "weight": company["score"] / total_score,
+                "rationale": f"Selected based on semantic similarity (score: {company['score']:.4f}).",
+            }
+            for company in ranking_companies
+        ]
+
+    explanation = (
+        f"Portfolio built from the top {len(ranking_companies)} semantically matched companies "
+        "with weights proportional to their relevance scores."
+    )
+    return recommendations, explanation
+
+
 def build_fallback_recommendations(companies: list[dict]) -> tuple[list[dict], str]:
     fallback_companies = companies[:FALLBACK_LIMIT]
     if not fallback_companies:

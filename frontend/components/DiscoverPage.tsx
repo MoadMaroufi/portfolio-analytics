@@ -77,6 +77,7 @@ export default function DiscoverPage({ user, authLoading, initialQuery = "" }: P
   const [saveState, setSaveState] = useState<string | null>(null);
   const [results, setResults] = useState<SemanticSearchResponse | null>(null);
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
+  const [searchMode, setSearchMode] = useState<"quick" | "smart" | null>(null);
   const hasAutoRun = useRef(false);
 
   const canSubmit = user && query.trim() && !loading;
@@ -94,10 +95,10 @@ export default function DiscoverPage({ user, authLoading, initialQuery = "" }: P
   useEffect(() => {
     if (!user || !initialQuery || hasAutoRun.current) return;
     hasAutoRun.current = true;
-    void executeSearch(initialQuery);
+    void executeSearch(initialQuery, true); // Default to smart search for auto-run
   }, [initialQuery, user]);
 
-  async function executeSearch(nextQuery: string) {
+  async function executeSearch(nextQuery: string, useLlm: boolean) {
     if (!user || !nextQuery.trim()) return;
 
     setLoading(true);
@@ -105,21 +106,29 @@ export default function DiscoverPage({ user, authLoading, initialQuery = "" }: P
     setSaveState(null);
     setResults(null);
     setExpandedTicker(null);
+    setSearchMode(useLlm ? "smart" : "quick");
 
     try {
-      const response = await runSemanticSearch(nextQuery.trim(), 5);
+      const response = await runSemanticSearch(nextQuery.trim(), 5, useLlm);
       setResults(response);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : c.discoverUnknownError);
     } finally {
       setLoading(false);
+      setSearchMode(null);
     }
   }
 
-  async function handleSearch(e: React.FormEvent) {
+  async function handleQuickSearch(e: React.FormEvent) {
     e.preventDefault();
     hasAutoRun.current = true;
-    await executeSearch(query);
+    await executeSearch(query, false);
+  }
+
+  async function handleSmartSearch(e: React.FormEvent) {
+    e.preventDefault();
+    hasAutoRun.current = true;
+    await executeSearch(query, true);
   }
 
   async function handleSave() {
@@ -194,35 +203,71 @@ export default function DiscoverPage({ user, authLoading, initialQuery = "" }: P
                 <p className="mt-2 text-sm leading-6 text-gray-400">{c.discoverSearchBody}</p>
               </div>
 
-              <form onSubmit={handleSearch} className="space-y-4">
-                <textarea
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={c.discoverPlaceholder}
-                  className="min-h-32 w-full rounded-2xl border border-gray-800 bg-gray-950/80 px-5 py-4 text-base outline-none transition-colors placeholder:text-gray-500 focus:border-blue-500"
-                />
-                <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-medium transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading ? (
-                  <ThinkingAnimation
-                    messages={[
-                      c.discoverThinkingStep1,
-                      c.discoverThinkingStep2,
-                      c.discoverThinkingStep3,
-                    ]}
-                    isLoading={loading}
-                  />
-                ) : (
-                  c.discoverSearch
-                )}
-              </button>
-                  <span className="text-sm text-gray-500">{c.discoverHint}</span>
+            <form className="space-y-4">
+              <textarea
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={c.discoverPlaceholder}
+                className="min-h-32 w-full rounded-2xl border border-gray-800 bg-gray-950/80 px-5 py-4 text-base outline-none transition-colors placeholder:text-gray-500 focus:border-blue-500"
+              />
+              <div className="flex flex-wrap items-center gap-4">
+                {/* Quick Search Button */}
+                <div className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={handleQuickSearch}
+                    disabled={!canSubmit || loading}
+                    className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {loading && searchMode === "quick" ? (
+                      c.discoverQuickSearchLoading
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        {c.discoverQuickSearch}
+                      </span>
+                    )}
+                  </button>
+                  <span className="text-xs text-emerald-400/70">{c.discoverQuickSearchHint}</span>
                 </div>
-              </form>
+
+                {/* Smart Search Button */}
+                <div className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={handleSmartSearch}
+                    disabled={!canSubmit || loading}
+                    className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {loading && searchMode === "smart" ? (
+                      <ThinkingAnimation
+                        messages={[
+                          c.discoverThinkingStep1,
+                          c.discoverThinkingStep2,
+                          c.discoverThinkingStep3,
+                        ]}
+                        isLoading={loading}
+                      />
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/>
+                          <path d="M8.5 8.5v.01"/>
+                          <path d="M16 15.5v.01"/>
+                          <path d="M12 12v.01"/>
+                          <path d="M11 17v.01"/>
+                          <path d="M7 14v.01"/>
+                        </svg>
+                        {c.discoverSmartSearch}
+                      </span>
+                    )}
+                  </button>
+                  <span className="text-xs text-blue-300/70">{c.discoverSmartSearchHint}</span>
+                </div>
+              </div>
+            </form>
             </section>
 
             {error && <p className="mt-6 text-sm text-red-400">{error}</p>}
