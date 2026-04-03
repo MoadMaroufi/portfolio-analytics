@@ -1,0 +1,156 @@
+import json
+
+from openai import OpenAI
+
+from config import Settings
+
+
+FALLBACK_LIMIT = 5
+
+
+def build_semantic_prompt(query: str, companies: list[dict]) -> str:
+    company_lines = []
+    for company in companies:
+        company_lines.append(
+            (
+                f"- ticker: {company['ticker']} | name: {company['name']} | "
+                f"sector: {company['sector']} | industry: {company['industry']} | "
+                f"country: {company['country']} | exchange: {company['exchange']} | "
+                f"score: {company['score']:.4f} | description: {company['description']}"
+            )
+        )
+
+    company_block = "\n".join(company_lines)
+    return (
+        "You are an expert European equity portfolio construction assistant.\n\n"
+        f'User query: "{query}"\n\n'
+        "Retrieved companies:\n"
+        f"{company_block}\n\n"
+        "Select the best matching companies from the retrieved list only. "
+        "Prefer 5 companies when available, otherwise use as many valid companies as possible.\n"
+        "Return JSON only with this exact shape:\n"
+        "{\n"
+        '  "recommendations": [\n'
+        "    {\n"
+        '      "ticker": "string",\n'
+        '      "weight": 0.2,\n'
+        '      "rationale": "short explanation"\n'
+        "    }\n"
+        "  ],\n"
+        '  "explanation": "overall portfolio explanation"\n'
+        "}\n\n"
+        "Rules:\n"
+        "- Use exact tickers from the retrieved companies only.\n"
+        "- Weights must be non-negative numbers summing to 1.0.\n"
+        "- Do not include markdown fences or any extra text.\n"
+        "- Keep each rationale concise and specific to the query."
+    )
+
+
+def _build_client(settings: Settings) -> OpenAI:
+    if not settings.nvidia_api_key:
+        raise RuntimeError("NVIDIA API key is not configured.")
+
+    return OpenAI(
+        base_url=settings.nvidia_base_url,
+        api_key=settings.nvidia_api_key,
+    )
+
+
+def _normalize_weights(recommendations: list[dict]) -> list[dict]:
+    total_weight = sum(float(item["weight"]) for item in recommendations)
+    if total_weight <= 0:
+        raise ValueError("Recommendation weights must sum to a positive value.")
+
+    normalized: list[dict] = []
+    for item in recommendations:
+        normalized.append({**item, "weight": float(item["weight"]) / total_weight})
+    return normalized
+
+
+def _enrich_recommendations(
+    recommendations: list[dict], companies_by_ticker: dict[str, dict]
+) -> list[dict]:
+    enriched: list[dict] = []
+    for item in recommendations:
+        ticker = item.get("ticker")
+        if not isinstance(ticker, str) or ticker not in companies_by_ticker:
+            continue
+
+        weight = item.get("weight")
+        rationale = item.get("rationale")
+        if not isinstance(weight, int | float) or float(weight) < 0:
+            continue
+        if not isinstance(rationale, str) or not rationale.strip():
+            continue
+
+        enriched.append(
+            {
+                **companies_by_ticker[ticker],
+                "weight": float(weight),
+                "rationale": rationale.strip(),
+            }
+        )
+
+    if not enriched:
+        raise ValueError("No valid recommendations were returned by the LLM.")
+
+    return _normalize_weights(enriched)
+
+
+def build_fallback_recommendations(companies: list[dict]) -> tuple[list[dict], str]:
+    fallback_companies = companies[:FALLBACK_LIMIT]
+    if not fallback_companies:
+        return [], "No relevant companies were found for this query."
+
+    equal_weight = 1.0 / len(fallback_companies)
+    recommendations = [
+        {
+            **company,
+            "weight": equal_weight,
+            "rationale": (
+                f"Fallback selection based on semantic similarity for {company['name']}."
+            ),
+        }
+        for company in fallback_companies
+    ]
+    explanation = (
+        "Returned the top semantically matched companies with equal weights because "
+        "the NVIDIA portfolio synthesis step was unavailable."
+    )
+    return recommendations, explanation
+
+
+def generate_semantic_recommendations(
+    query: str, companies: list[dict], settings: Settings
+) -> tuple[list[dict], str]:
+    if not companies:
+        return [], "No relevant companies were found for this query."
+
+    prompt = build_semantic_prompt(query, companies)
+    client = _build_client(settings)
+    completion = client.chat.completions.create(
+        model=settings.nvidia_model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=settings.llm_temperature,
+        top_p=settings.llm_top_p,
+        max_tokens=settings.llm_max_tokens,
+        stream=False,
+    )
+
+    content = completion.choices[0].message.content if completion.choices else None
+    if not content:
+        raise ValueError("NVIDIA API returned an empty response.")
+
+    payload = json.loads(content)
+    explanation = payload.get("explanation")
+    if not isinstance(explanation, str) or not explanation.strip():
+        raise ValueError("LLM response explanation is missing.")
+
+    recommendations = payload.get("recommendations")
+    if not isinstance(recommendations, list):
+        raise ValueError("LLM response recommendations are missing.")
+
+    companies_by_ticker = {company["ticker"]: company for company in companies}
+    enriched = _enrich_recommendations(recommendations, companies_by_ticker)
+    return enriched, explanation.strip()
