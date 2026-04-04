@@ -1,5 +1,3 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
 export type Recommendation = {
   ticker: string;
   name: string;
@@ -26,7 +24,7 @@ export async function runSemanticSearch(
   topK = 5,
   useLlm = true
 ): Promise<SemanticSearchResponse> {
-  const res = await fetch(`${API_URL}/semantic-search`, {
+  const res = await fetch("/api/semantic-search", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, top_k: topK, use_llm: useLlm }),

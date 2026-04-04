@@ -24,8 +24,6 @@ type Result = {
 
 type Row = { ticker: string; weight: string };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
 export default function Home() {
   return <PageBody />;
 }
@@ -78,7 +76,7 @@ function PageBody() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/analyze`, {
+      const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ weights }),
@@ -148,9 +146,11 @@ function PageBody() {
             </div>
           </div>
         </div>
+      </div>
 
-        <DiscoverPromo user={user} authLoading={authLoading} />
+      <DiscoverPromo user={user} authLoading={authLoading} />
 
+      <div className="max-w-2xl mx-auto">
         <form onSubmit={submit} className="space-y-4">
           {rows.map((row, i) => (
             <div key={i} className="flex gap-3 items-center">

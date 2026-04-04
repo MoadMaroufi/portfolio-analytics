@@ -60,7 +60,9 @@ def optimize_portfolio(prices: pd.DataFrame, settings: Settings) -> OptimizeResp
     tickers = list(prices.columns)
 
     constraints = [{"type": "eq", "fun": lambda w: np.sum(w) - 1.0}]
-    max_w = min(settings.max_weight_per_asset, 1.0 / n * 2)
+    # Keep the configured cap, but ensure feasibility for long-only weights summing to 1.
+    # If max_weight_per_asset is below 1/n, no feasible portfolio exists.
+    max_w = max(min(settings.max_weight_per_asset, 1.0), 1.0 / n)
     bounds = tuple((0.0, max_w) for _ in range(n))
     x0 = np.full(n, 1.0 / n)
 

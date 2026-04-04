@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 @pytest.fixture(autouse=True)
 def test_settings(monkeypatch):
+    monkeypatch.setenv("PORTFOLIO_API_KEY", "test-api-key")
     monkeypatch.setenv("PORTFOLIO_QDRANT_URL", "https://example.qdrant.local")
     monkeypatch.setenv("PORTFOLIO_QDRANT_API_KEY", "test-key")
     monkeypatch.setenv("PORTFOLIO_QDRANT_COLLECTION", "european_companies")

@@ -4,6 +4,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    api_key: str = ""
     risk_free_rate: float = 0.05
     data_period: str = "1y"
     max_tickers: int = 20
@@ -28,7 +29,7 @@ class Settings(BaseSettings):
         "https://portfolio-analytics-murex.vercel.app,http://localhost:3000"
     )
     cors_methods: str = "POST,OPTIONS"
-    cors_headers: str = "Content-Type,Authorization"
+    cors_headers: str = "Content-Type,Authorization,X-API-Key"
 
     @property
     def cors_origins_list(self) -> list[str]:

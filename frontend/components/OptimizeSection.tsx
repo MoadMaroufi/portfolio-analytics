@@ -21,8 +21,6 @@ import {
 import { useLang } from "@/lib/lang";
 import { t } from "@/lib/copy";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
 function makeExampleFrontier() {
   return Array.from({ length: 60 }, (_, i) => {
     const ti = i / 59;
@@ -77,7 +75,7 @@ export default function OptimizeSection({ user, currentTickers }: Props) {
         return;
       }
 
-      const res = await fetch(`${API_URL}/optimize`, {
+      const res = await fetch("/api/optimize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tickers: validTickers }),

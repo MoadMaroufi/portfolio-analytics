@@ -275,12 +275,12 @@ export default function DiscoverPage({ user, authLoading, initialQuery = "" }: P
 
             {results && (
               <section className="mt-8 space-y-6">
-                <div className="rounded-3xl border border-gray-800 bg-gray-900/70 p-6 shadow-xl shadow-black/20">
+                <div className="rounded-3xl border border-gray-800 bg-gray-900/70 p-7 shadow-xl shadow-black/20">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="max-w-3xl">
                       <p className="text-xs uppercase tracking-[0.25em] text-gray-500">{c.discoverResultsLabel}</p>
-                      <h2 className="mt-2 text-2xl font-semibold">{results.query}</h2>
-                      <p className="mt-3 text-sm leading-6 text-gray-300">{results.explanation}</p>
+                      <h2 className="mt-2 text-3xl font-semibold">{c.discoverRecommendationTitle}</h2>
+                      <p className="mt-3 text-base leading-7 text-gray-300">{results.explanation}</p>
                       {summary && <p className="mt-4 text-xs text-gray-500">{summary}</p>}
                     </div>
                     <div className="flex flex-wrap gap-3">

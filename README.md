@@ -87,8 +87,6 @@ npm run dev
 
 The frontend runs on `http://localhost:3000`.
 
-By default, the frontend reads `NEXT_PUBLIC_API_URL`, falling back to `http://localhost:8000`.
-
 ## Environment Variables
 
 ### Backend
@@ -96,6 +94,7 @@ By default, the frontend reads `NEXT_PUBLIC_API_URL`, falling back to `http://lo
 Create `backend/.env`:
 
 ```env
+PORTFOLIO_API_KEY=
 PORTFOLIO_RISK_FREE_RATE=0.05
 PORTFOLIO_DATA_PERIOD=1y
 PORTFOLIO_MAX_TICKERS=20
@@ -126,7 +125,8 @@ PORTFOLIO_CORS_ORIGINS=http://localhost:3000
 Create `frontend/.env.local`:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
+BACKEND_API_URL=http://localhost:8000
+BACKEND_API_KEY=
 NEXT_PUBLIC_FIREBASE_API_KEY=
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=

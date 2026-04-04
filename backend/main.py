@@ -1,8 +1,10 @@
 import logging
+import secrets
 from contextlib import asynccontextmanager
 
 from fastapi import Depends
 from fastapi import FastAPI
+from fastapi import Header
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -51,6 +53,8 @@ from services.qdrant_client import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
+    if not settings.api_key:
+        raise RuntimeError("PORTFOLIO_API_KEY is required.")
     if settings.qdrant_url:
         load_embedding_model(settings.embedding_model_name)
         init_qdrant_client(settings.qdrant_url, settings.qdrant_api_key)
@@ -79,7 +83,17 @@ app.add_exception_handler(DataFetchError, data_fetch_handler)  # pyright: ignore
 app.add_exception_handler(TooManyTickersError, too_many_tickers_handler)  # pyright: ignore[reportArgumentType]
 
 
-@app.post("/analyze", response_model=AnalyzeResponse)
+def require_api_key(
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+    settings: Settings = Depends(get_settings),
+) -> None:
+    if not x_api_key or not secrets.compare_digest(x_api_key, settings.api_key):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+@app.post(
+    "/analyze", response_model=AnalyzeResponse, dependencies=[Depends(require_api_key)]
+)
 def analyze(req: AnalyzeRequest, settings: Settings = Depends(get_settings)):
     if len(req.weights) < 2:
         raise InsufficientTickersError(minimum=2)
@@ -90,7 +104,9 @@ def analyze(req: AnalyzeRequest, settings: Settings = Depends(get_settings)):
         return compute_portfolio_metrics(returns, req.weights, settings)
 
 
-@app.post("/optimize", response_model=OptimizeResponse)
+@app.post(
+    "/optimize", response_model=OptimizeResponse, dependencies=[Depends(require_api_key)]
+)
 def optimize(req: OptimizeRequest, settings: Settings = Depends(get_settings)):
     if len(req.tickers) < 2:
         raise InsufficientTickersError(minimum=2)
@@ -100,7 +116,11 @@ def optimize(req: OptimizeRequest, settings: Settings = Depends(get_settings)):
         return optimize_portfolio(prices, settings)
 
 
-@app.post("/semantic-search", response_model=SemanticSearchResponse)
+@app.post(
+    "/semantic-search",
+    response_model=SemanticSearchResponse,
+    dependencies=[Depends(require_api_key)],
+)
 def semantic_search(
     req: SemanticSearchRequest, settings: Settings = Depends(get_settings)
 ):
