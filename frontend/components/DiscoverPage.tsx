@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { User } from "firebase/auth";
 import AuthButton from "@/components/AuthButton";
+import ResultDisclaimer from "@/components/ResultDisclaimer";
 import { useLang } from "@/lib/lang";
 import { t } from "@/lib/copy";
 import {
@@ -322,6 +323,8 @@ export default function DiscoverPage({ user, authLoading, initialQuery = "" }: P
                     {c.discoverEmpty}
                   </div>
                 )}
+
+                <ResultDisclaimer />
               </section>
             )}
           </>

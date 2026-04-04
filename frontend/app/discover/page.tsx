@@ -3,7 +3,6 @@
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import DiscoverPage from "@/components/DiscoverPage";
-import { LangProvider } from "@/lib/lang";
 import { useAuth } from "@/lib/useAuth";
 
 function DiscoverContent() {
@@ -18,10 +17,8 @@ function DiscoverContent() {
 
 export default function DiscoverRoute() {
   return (
-    <LangProvider>
-      <Suspense fallback={null}>
-        <DiscoverContent />
-      </Suspense>
-    </LangProvider>
+    <Suspense fallback={null}>
+      <DiscoverContent />
+    </Suspense>
   );
 }

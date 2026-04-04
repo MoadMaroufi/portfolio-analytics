@@ -114,6 +114,11 @@ const COPY = {
     discoverSmartSearchHint: "AI-powered portfolio construction with detailed reasoning",
     discoverQuickSearchLoading: "Searching...",
     discoverSmartSearchLoading: "AI is thinking...",
+    // Legal
+    legalFooter:
+      "Educational hobby project only. Nothing here is financial, investment, tax, or legal advice. Market data, analytics, and AI-generated suggestions may be incomplete, delayed, or inaccurate.",
+    legalResults:
+      "For educational use only. This hobby project does not provide financial or investment advice. Always verify any data or AI-generated suggestion before making decisions.",
   },
   fr: {
     // Header
@@ -228,6 +233,11 @@ const COPY = {
     discoverSmartSearchHint: "Construction de portefeuille par IA avec raisonnement détaillé",
     discoverQuickSearchLoading: "Recherche...",
     discoverSmartSearchLoading: "L'IA réfléchit...",
+    // Legal
+    legalFooter:
+      "Projet éducatif et personnel uniquement. Rien ici ne constitue un conseil financier, d'investissement, fiscal ou juridique. Les données de marché, analyses et suggestions générées par l'IA peuvent être incomplètes, retardées ou inexactes.",
+    legalResults:
+      "Usage éducatif uniquement. Ce projet personnel ne fournit aucun conseil financier ou d'investissement. Vérifiez toujours les données et suggestions générées par l'IA avant toute décision.",
   },
 } as const;
 

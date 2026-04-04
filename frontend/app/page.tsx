@@ -7,8 +7,9 @@ import AuthButton from "@/components/AuthButton";
 import PortfolioManager from "@/components/PortfolioManager";
 import OptimizeSection from "@/components/OptimizeSection";
 import DiscoverPromo from "@/components/DiscoverPromo";
+import ResultDisclaimer from "@/components/ResultDisclaimer";
 import { useAuth } from "@/lib/useAuth";
-import { LangProvider, useLang, type Lang } from "@/lib/lang";
+import { useLang, type Lang } from "@/lib/lang";
 import { t } from "@/lib/copy";
 import { consumeRecommendationDraft } from "@/lib/semanticSearch";
 
@@ -26,11 +27,7 @@ type Row = { ticker: string; weight: string };
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export default function Home() {
-  return (
-    <LangProvider>
-      <PageBody />
-    </LangProvider>
-  );
+  return <PageBody />;
 }
 
 function PageBody() {
@@ -200,6 +197,10 @@ function PageBody() {
           user={user ?? null}
           currentTickers={rows.map((r) => r.ticker).filter(Boolean)}
         />
+
+        <div className="mt-8">
+          <ResultDisclaimer />
+        </div>
 
         {error && <p className="mt-6 text-red-400">{error}</p>}
 
