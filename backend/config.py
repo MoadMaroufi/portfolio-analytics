@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     nvidia_model: str = "moonshotai/kimi-k2-instruct-0905"
     llm_temperature: float = 0.6
     llm_top_p: float = 0.9
-    llm_max_tokens: int = 4096
+    llm_max_tokens: int = 512
     huggingface_token: str | None = None
 
     # CORS configuration

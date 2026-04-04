@@ -9,17 +9,25 @@ logger = logging.getLogger(__name__)
 
 
 FALLBACK_LIMIT = 5
+MAX_DESCRIPTION_CHARS = 500
+
+
+def _trim_description(value: str, max_chars: int = MAX_DESCRIPTION_CHARS) -> str:
+    if len(value) <= max_chars:
+        return value
+    return f"{value[:max_chars].rstrip()}..."
 
 
 def build_semantic_prompt(query: str, companies: list[dict]) -> str:
     company_lines = []
     for company in companies:
+        description = _trim_description(company["description"])
         company_lines.append(
             (
                 f"- ticker: {company['ticker']} | name: {company['name']} | "
                 f"sector: {company['sector']} | industry: {company['industry']} | "
                 f"country: {company['country']} | exchange: {company['exchange']} | "
-                f"score: {company['score']:.4f} | description: {company['description']}"
+                f"score: {company['score']:.4f} | description: {description}"
             )
         )
 

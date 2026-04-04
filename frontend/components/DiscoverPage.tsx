@@ -24,40 +24,77 @@ function ThinkingAnimation({
   isLoading: boolean;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [visibleChars, setVisibleChars] = useState(0);
   const [showCursor, setShowCursor] = useState(true);
 
   useEffect(() => {
     if (!isLoading) {
       setCurrentIndex(0);
+      setVisibleChars(0);
       return;
     }
 
-    // Rotate through messages every 3 seconds
-    const messageInterval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % messages.length);
-    }, 3000);
+    const message = messages[currentIndex] ?? "";
 
-    // Blink cursor every 500ms
+    // Typewriter effect for active message
+    if (visibleChars < message.length) {
+      const typingTimeout = setTimeout(() => {
+        setVisibleChars((prev) => prev + 1);
+      }, 28);
+      return () => clearTimeout(typingTimeout);
+    }
+
+    // Pause before switching to the next message
+    const messageTimeout = setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % messages.length);
+      setVisibleChars(0);
+    }, 850);
+    return () => clearTimeout(messageTimeout);
+  }, [currentIndex, isLoading, messages, visibleChars]);
+
+  useEffect(() => {
+    if (!isLoading) return;
+
+    // Blink cursor every 450ms
     const cursorInterval = setInterval(() => {
       setShowCursor((prev) => !prev);
-    }, 500);
+    }, 450);
 
-    return () => {
-      clearInterval(messageInterval);
-      clearInterval(cursorInterval);
-    };
-  }, [isLoading, messages.length]);
+    return () => clearInterval(cursorInterval);
+  }, [isLoading]);
 
   if (!isLoading) return null;
 
+  const message = messages[currentIndex] ?? "";
+
   return (
-    <span className="inline-flex items-center">
-      <span className="text-blue-300">{messages[currentIndex]}</span>
+    <span className="inline-flex items-center gap-2">
+      <span className="relative inline-flex h-2.5 w-2.5">
+        <span className="absolute inline-flex h-full w-full rounded-full bg-blue-400/40 animate-ping" />
+        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-blue-300" />
+      </span>
+      <span className="min-w-[16ch] text-left text-blue-200">
+        {message.slice(0, visibleChars)}
+      </span>
       <span
-        className={`ml-0.5 inline-block h-4 w-0.5 bg-blue-300 transition-opacity ${
+        className={`inline-block h-4 w-0.5 bg-blue-200 transition-opacity ${
           showCursor ? "opacity-100" : "opacity-0"
         }`}
       />
+      <span className="inline-flex items-center gap-0.5">
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-blue-300/80 animate-bounce"
+          style={{ animationDelay: "0ms" }}
+        />
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-blue-300/80 animate-bounce"
+          style={{ animationDelay: "120ms" }}
+        />
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-blue-300/80 animate-bounce"
+          style={{ animationDelay: "240ms" }}
+        />
+      </span>
     </span>
   );
 }
